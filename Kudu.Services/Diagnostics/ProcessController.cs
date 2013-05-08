@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -40,7 +41,7 @@ namespace Kudu.Services.Performance
             using (_tracer.Step("ProcessController.GetProcess"))
             {
                 Process process = Process.GetProcessById(id);
-                return Request.CreateResponse(HttpStatusCode.OK, GetProcessInfo(process, Request.RequestUri.AbsoluteUri.TrimEnd('/'), details: true));
+                return Request.CreateResponse(HttpStatusCode.OK, GetProcessInfo(process, Request.RequestUri.AbsoluteUri, details: true));
             }
         }
 
@@ -55,17 +56,18 @@ namespace Kudu.Services.Performance
         }
 
         [HttpGet]
-        public HttpResponseMessage MiniDump(int id, int flags = 0)
+        public HttpResponseMessage MiniDump(int id, int dumpType = 0)
         {
             using (_tracer.Step("ProcessController.MiniDump"))
             {
                 Process process = Process.GetProcessById(id);
 
-                string dumpFile = Path.Combine(_environment.TempPath, "minidump.dmp");
+                //string dumpFile = Path.Combine(_environment.TempPath, "minidump.dmp");
+                string dumpFile = Path.Combine(_environment.DiagnosticsPath, "minidump.dmp");
                 FileSystemHelpers.DeleteFileSafe(dumpFile);
 
                 _tracer.Trace("MiniDump pid={0}, name={1}, file={2}", process.Id, process.ProcessName, dumpFile);
-                process.MiniDump(dumpFile, (MiniDumpNativeMethods.MINIDUMP_TYPE)flags);
+                process.MiniDump(dumpFile, (MINIDUMP_TYPE)dumpType);
                 _tracer.Trace("MiniDump size={0}", new FileInfo(dumpFile).Length);
 
                 HttpResponseMessage response = Request.CreateResponse();
@@ -77,6 +79,7 @@ namespace Kudu.Services.Performance
             }
         }
 
+        [SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity", Justification = "")]
         private static ProcessInfo GetProcessInfo(Process process, string href, bool details = false)
         {
             var selfLink = new Uri(href.TrimEnd('/'));

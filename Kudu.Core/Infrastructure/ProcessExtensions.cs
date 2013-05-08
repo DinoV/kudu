@@ -124,7 +124,7 @@ namespace Kudu.Core.Infrastructure
             return value.Value;
         }
 
-        public static void MiniDump(this Process process, string dumpFile, MiniDumpNativeMethods.MINIDUMP_TYPE dumpType = MiniDumpNativeMethods.MINIDUMP_TYPE.WithFullMemory)
+        public static void MiniDump(this Process process, string dumpFile, MINIDUMP_TYPE dumpType)
         {
             using (var fs = new FileStream(dumpFile, FileMode.Create, FileAccess.ReadWrite, FileShare.None))
             {
